@@ -20,28 +20,17 @@
       </nav>
     </div>
   </div>
-  <div class="max-w-3xl mx-auto pt-15 px-15" :class="{ 'pb-76': isPlayerVisible, 'pb-15': !isPlayerVisible }">
-    <RouterView @episode="playEpisode" />
+  <div class="max-w-3xl mx-auto pt-15 px-15" :class="{ 'pb-76': false, 'pb-15': true }">
+    <RouterView />
   </div>
-  <Player :episode-id="playerEpisodeId" @visibility="updatePlayerVisibility" />
+  <!--<Player :episode-id="playerEpisodeId" @visibility="updatePlayerVisibility" />-->
+  <Player />
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
 import { RouterLink, RouterView } from 'vue-router';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 import Navigation from '@/components/layout/Header/Navigation.vue';
 import Player from '@/components/Player.vue';
-
-const isPlayerVisible = ref<boolean>(true);
-const playerEpisodeId = ref<number|undefined>();
-
-const updatePlayerVisibility = (isVisible: boolean = false) => {
-  isPlayerVisible.value = isVisible;
-}
-
-const playEpisode = (id: number) => {
-  playerEpisodeId.value = id;
-}
 </script>

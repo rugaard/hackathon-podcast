@@ -1,9 +1,9 @@
 import type { App } from 'vue';
 import { spreakerKey } from './composable';
-import { Spreaker } from './client';
+import { Spreaker } from '../podcast-player/spreaker';
 
 /**
- * Register translator with Vue.
+ * Register package with Vue.
  *
  * @param app { App }
  * @param brand { brand }

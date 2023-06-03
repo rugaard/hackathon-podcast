@@ -20,27 +20,36 @@
         </button>
       </div>
     </div>
+    <button type="button" @click="playEpisode(52361215)">Start episode</button>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { onBeforeMount, ref } from 'vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { useSpreaker } from '@plugins/spreaker-api';
+//import { useSpreaker } from '@plugins/spreaker-api';
+import { usePodcastPlayer } from '@plugins/podcast-player';
 
-const emit = defineEmits(['episode']);
+const podcastPlayer = usePodcastPlayer();
+const { startEpisode } = podcastPlayer;
 
-const spreaker = useSpreaker();
+//const spreaker = useSpreaker();
 const episode = ref<any>();
 const playingEpisodeId = ref<number>();
 const isPlaying = ref<boolean>(false);
 
 onBeforeMount(async () => {
-  const data = await spreaker.episode(52361215);
-  episode.value = data.response.episode;
+  //const data = await spreaker.episode(52361215);
+  //episode.value = data.response.episode;
 });
 
-const playEpisode = (id: number) => {
-  emit('episode', id);
+const playEpisode = async (id: number, autoPlay: boolean = true) => {
+  const episode = startEpisode(id);
+  console.log('Index.vue -> playEpisode -> startEpisode', episode);
+  /*
+  const data = await spreaker.episode(id);
+  episode.value = data.response.episode;
+
+  player.value.load(episode.value.playback_url, autoPlay);*/
 }
 </script>
