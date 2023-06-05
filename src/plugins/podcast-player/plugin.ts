@@ -1,5 +1,6 @@
 import type { App } from 'vue';
-import { createPinia } from 'pinia';
+import { podcastPlayerKey } from './composable';
+import { Player } from './player';
 
 /**
  * Register package with Vue.
@@ -8,6 +9,5 @@ import { createPinia } from 'pinia';
  * @returns void
  */
 export default function install(app: App): void {
-  // Add pinia plugin to application.
-  app.use(createPinia());
+  app.provide<Player>(podcastPlayerKey, new Player);
 }

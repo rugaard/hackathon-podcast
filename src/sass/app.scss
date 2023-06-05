@@ -12,3 +12,10 @@
 @supports (font-variation-settings: normal) {
   :root { font-family: 'Inter var', sans-serif; }
 }
+
+/*----------------------------------------------------------------------
+ * Application
+ *---------------------------------------------------------------------*/
+body {
+  @apply bg-gray-100;
+}

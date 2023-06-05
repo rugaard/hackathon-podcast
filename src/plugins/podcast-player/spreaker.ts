@@ -1,3 +1,5 @@
+import type { Episode, Show, ShowEpisodes } from './types';
+
 export class Spreaker
 {
     /**
@@ -22,10 +24,15 @@ export class Spreaker
      * Get a specific show.
      *
      * @param showId { number }
+     * @param parameters { { [key: string]: string } }
      * @returns { Promise<Show> }
      */
-    public show = async (showId: number): Promise<Show> => {
-        const data = (await this.request('GET', '/shows/' + showId))['show'];
+    public show = async (showId: number, parameters?: { [key: string]: string }): Promise<Show> => {
+        const data = (await this.request('GET', '/shows/' + showId, parameters))['show'];
+        if (!data) {
+          throw Error('No show returned');
+        }
+
         return {
           id: data.show_id,
           title: data.title,
@@ -64,10 +71,15 @@ export class Spreaker
      * Get all episodes in a specific show.
      *
      * @param showId { number }
+     * @param parameters { { [key: string]: string } }
      * @returns { Promise<ShowEpisodes> }
      */
-    public showEpisodes = async (showId: number): Promise<ShowEpisodes> => {
-      const data = await this.request('GET', '/shows/' + showId + '/episodes');
+    public showEpisodes = async (showId: number, parameters?: { [key: string]: string }): Promise<ShowEpisodes> => {
+      const data = await this.request('GET', '/shows/' + showId + '/episodes', parameters);
+      if (!data) {
+        throw Error('No show episodes returned');
+      }
+
       return {
         items: data.items.map((episode: any): Partial<Episode> => {
           return {
@@ -88,7 +100,7 @@ export class Spreaker
             published_at: episode.published_at
           }
         }),
-        next_page_url: data.next_url || null
+        last_id: data.next_url ? (new URL(data.next_url).searchParams.get('last_id') || null) : null
       }
     }
 
@@ -96,14 +108,18 @@ export class Spreaker
      * Get a specific episode.
      *
      * @param episodeId { number }
+     * @param parameters { { [key: string]: string } }
      * @returns { Promise<Episode> }
      */
-    public episode = async (episodeId: number): Promise<Episode> => {
-      const data = (await this.request('GET', '/episodes/' + episodeId))['episode'];
+    public episode = async (episodeId: number, parameters?: { [key: string]: string }): Promise<Episode> => {
+      const data = (await this.request('GET', '/episodes/' + episodeId, parameters))['episode'];
+      if (!data) {
+        throw Error('No episodes returned');
+      }
+
       return {
         id: data.episode_id,
         type: data.type,
-        status: data.encoding_status,
         show_id: data.show_id,
         show: {
           id: data.show.show_id,
@@ -114,7 +130,7 @@ export class Spreaker
           }
         },
         season: {
-          type: data.season_type || undefined,
+          type: data.season_episode_type || undefined,
           no: data.season_number || undefined
         },
         episode_no: data.episode_number,
@@ -170,10 +186,11 @@ export class Spreaker
      *
      * @param method { string }
      * @param endpoint { string }
+     * @param parameters { { [key: string]: string } }
      * @returns { Promise<any> }
      */
-    protected request = async (method: string, endpoint: string): Promise<any> => {
-        return fetch(this.baseUrl + endpoint, {
+    protected request = async (method: string, endpoint: string, parameters?: { [key: string]: string }): Promise<any> => {
+        return fetch(this.baseUrl + endpoint + (parameters ? '?' + new URLSearchParams(parameters).toString() : ''), {
             method: method,
             mode: 'cors',
             headers: {
@@ -200,94 +217,5 @@ export class Spreaker
             throw error;
         })
     }
-}
-
-type Episode = {
-  id: number
-  type: string
-  status: string
-  show_id: number
-  show: Partial<Show>
-  season: Season
-  episode_no: number
-  title: string
-  description: Description
-  duration: number
-  url: string
-  image: Image,
-  download: {
-    enabled?: boolean|undefined
-    url?: string|undefined
-  }
-  waveform_url: string|null
-  media: {
-    id: number|null
-    url: string|null
-  },
-  count: {
-    play: number
-    ondemand: number
-    live: number
-    downloads: number
-    likes: number
-    messages: number
-  }
-  tags: string[],
-  author_id: number
-  author: Partial<Author>
-  is_explicit: boolean
-  transcript?: Transcript
-  published_at: string
-}
-
-type Show = {
-  id: number
-  title: string
-  language: string
-  description: Description
-  image: Image
-  itunes_url: string
-  author_id: number
-  author_name: string
-  author: Partial<Author>
-  owner_name: string
-  copyright: string
-  last_episode_at: string
-  is_explicit: boolean
-}
-
-type ShowEpisodes = {
-  items: Partial<Episode>[],
-  next_page_url?: string|null
-}
-
-type Season = {
-  type: string
-  no: string
-}
-
-type Author = {
-  id: number
-  username: string
-  fullname: string
-  description: string
-  image: Image
-  type: string
-  plan: string
-}
-
-type Image = {
-  url: string
-  original: string
-}
-
-type Description = {
-  text: string
-  html: string
-}
-
-type Transcript = {
-  type: string
-  url: string
 }
 

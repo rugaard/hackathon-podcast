@@ -3,8 +3,14 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
-import useLocalStorage from '@composables/localStorage';
+import { usePodcastPlayer } from '@plugins/podcast-player';
 
 import CompactPlayer from '@components/player/Compact.vue';
+
+/**
+ * ------------------------------------------
+ * Composables
+ * ------------------------------------------
+ */
+const player = usePodcastPlayer();
 </script>

@@ -37,3 +37,12 @@ library.add(
   faPlaySolid,
   faPlayCircleSolid
 );
+
+/**
+ * Load icons from the "duotone" style.
+ */
+import { faSpinnerThird as faSpinnerThirdDuo } from '@fortawesome/pro-duotone-svg-icons/faSpinnerThird';
+
+library.add(
+  faSpinnerThirdDuo
+);

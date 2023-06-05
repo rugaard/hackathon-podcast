@@ -1,4 +1,25 @@
+import { computed, ref, toRef, type ComputedRef, type Ref } from 'vue';
+import EventEmitter from 'events';
+import { useLocalStorage } from './localStorage';
+import { Spreaker } from './spreaker';
+import type { Episode, Show } from './types';
+
 class Player {
+  /**
+   * Spreaker API client.
+   *
+   * @returns { SpreakerAPI }
+   */
+  protected readonly api: Spreaker;
+
+  /**
+   * Event emitter.
+   *
+   * @protected
+   * @type { EventEmitter }
+   */
+  protected emitter: EventEmitter;
+
   /**
    * The Player instance.
    *
@@ -7,28 +28,88 @@ class Player {
   protected player: HTMLAudioElement;
 
   /**
-   * PodcastPlayer constructor.
+   * Episode currently playing.
+   *
+   * @var { Ref<Episode|null> }
+   */
+  protected currentlyPlaying: Ref<Episode|null> = useLocalStorage('player.currently_playing', null);
+
+  /**
+   * Player episodes list.
+   *
+   * @var { Ref<PlayerEpisodesList|null> }
+   */
+  protected playerEpisodesList: Ref<PlayerEpisodesList|null> = useLocalStorage('player.episodes_list', null);
+
+  /**
+   * Player constructor.
    *
    * @param player { HTMLAudioElement }
    */
   constructor() {
+    // Instantiate Spreaker API client.
+    this.api = new Spreaker('Hackathon');
+
+    // Create internal event emitter.
+    this.emitter = new (EventEmitter as any)();
+
+    // Create internal player instance.
     this.player = new Audio;
+
+    // Player events and listeners.
+    this.registerPlayerEvents().registerListenerEvents();
+
+    // We have an episode in local storage,
+    // let's use to preload the player.
+    if (this.currentlyPlaying.value !== null) {
+      this.load(this.currentlyPlaying.value);
+    }
   }
 
-  public load = (url: string, autoPlay: boolean = false): this => {
-    this.player.src = url;
-    this.player.load();
+  /**
+   * Start episode.
+   *
+   * @param episodeId { number }
+   * @returns { Promise<Episode> }
+   */
+  public playEpisode = async (episodeId: number): Promise<Episode> => {
+    // Load episode and start playing.
+    const episode = await this.api.episode(episodeId);
+    this.loadAndPlay(episode);
 
-    if (autoPlay) {
-      const isReadyToPlay = setInterval(() => {
-        if (this.player.readyState >= 2) {
-          this.play();
-          clearInterval(isReadyToPlay);
-        }
-      }, 100);
+    // Set episode as currently playing.
+    this.currentlyPlaying.value = episode;
+
+    if (this.playerEpisodesList.value?.show.id !== episode.show_id) {
+      this.playerEpisodesList.value = {
+        show: await this.api.show(episode.show_id),
+        episodes: (await this.api.showEpisodes(episode.show_id)).items || []
+      };
     }
 
+    return episode;
+  }
+
+  /**
+   * Load episode.
+   *
+   * @param episode { Episode }
+   * @returns { this }
+   */
+  protected load = (episode: Episode): this => {
+    this.player.src = episode.url;
+    this.player.load();
     return this;
+  }
+
+  /**
+   * Load episode and auto-play it.
+   *
+   * @param episode { Episode }
+   * @returns { this }
+   */
+  protected loadAndPlay = (episode: Episode): this => {
+    return this.load(episode).play();
   }
 
   /**
@@ -37,7 +118,7 @@ class Player {
    * @returns { this }
    */
   public togglePlayPause = (): this => {
-    !this.player.paused ? this.pause() : this.play();
+    this.isPlaying.value ? this.pause() : this.play();
     return this;
   }
 
@@ -62,67 +143,150 @@ class Player {
   }
 
   /**
-   * Whether player is playing or not.
+   * Check a specific episode ID is currently playing.
    *
+   * @param episodeId { number }
    * @returns { boolean }
    */
-  get isPlaying(): boolean {
-    return !this.player.paused;
+  public isEpisodePlaying = (episodeId: number): boolean => {
+    return this.currentlyPlaying.value?.id === episodeId;
   }
 
   /**
-   * Get time played.
+   * Add event listener.
    *
-   * @returns { number }
+   * @param event { string }
+   * @param listener { (...args: any[]) }
+   * @returns { this }
    */
-  get currentTime(): number {
-    return this.player.currentTime || 0;
+  public on = (event: string, listener: (...args: any[]) => void): this => {
+    this.emitter.addListener(event, listener);
+    return this;
   }
 
   /**
-   * Get time played in percentage.
+   * Remove event listener.
    *
-   * @returns { number }
+   * @param event { string }
+   * @param listener { (...args: any[]) }
+   * @returns { this }
    */
-  get currentTimeInPercentage(): number {
-    return this.currentTime * 100 / this.totalTime;
+  public off = (event: string, listener: (...args: any[]) => void): this => {
+    this.emitter.removeListener(event, listener);
+    return this;
   }
+
+  /**
+   * Register player event listeners.
+   *
+   * @returns { this }
+   */
+  private registerListenerEvents = (): this => {
+    return this.on('load', () => this.isPlayable.value = false)
+        .on('playable', () => this.isPlayable.value = true)
+        .on('pause', () => this.isPlaying.value = false)
+        .on('play', () => this.isPlaying.value = true)
+        .on('metadata', (self: this) => this.totalTime.value = self.player.duration || 0)
+        .on('time', (self: this) => this.timePlayed.value = self.player.currentTime || 0);
+  }
+
+  /**
+   * Register custom player events.
+   *
+   * @returns { this }
+   */
+  private registerPlayerEvents = (): this => {
+    this.player.addEventListener('loadstart', (event: Event) => this.emitter.emit('load', this, event));
+    this.player.addEventListener('loadedmetadata', (event: Event) => this.emitter.emit('metadata', this, event));
+    this.player.addEventListener('canplay', (event: Event) => this.emitter.emit('playable', this, event));
+    this.player.addEventListener('error', (event: Event) => this.emitter.emit('error', this, event));
+    this.player.addEventListener('ended', (event: Event) => this.emitter.emit('complete', this, event));
+    this.player.addEventListener('pause', (event: Event) => this.emitter.emit('pause', this, event));
+    this.player.addEventListener('play', (event: Event) => this.emitter.emit('play', this, event));
+    this.player.addEventListener('seeking', (event: Event) => this.emitter.emit('seek', this, event));
+    this.player.addEventListener('seeked', (event: Event) => this.emitter.emit('seek-end', this, event));
+    this.player.addEventListener('timeupdate', (event: Event) => this.emitter.emit('time', this, event));
+    this.player.addEventListener('volumechange', (event: Event) => this.emitter.emit('volume', this, event));
+    return this;
+  }
+
+  /**
+   * Whether player is paused or not.
+   *
+   * @var { Ref<boolean> }
+   */
+  public isPlayable: Ref<boolean> = ref<boolean>(false);
+
+  /**
+   * Whether player is paused or not.
+   *
+   * @var { Ref<boolean> }
+   */
+  public isPlaying: Ref<boolean> = ref<boolean>(false);
+
+  /**
+   * Episode currently playing.
+   *
+   * @var { ComputedRef<Episode|null> }
+   */
+  public episode = computed<Episode|null>((): Episode|null => {
+    return this.currentlyPlaying.value;
+  });
+
+  /**
+   * Currently playing show's list of episodes.
+   *
+   * @var { ComputedRef<PlayerEpisodesList|null> }
+   */
+  public showEpisodes = computed<PlayerEpisodesList|null>((): PlayerEpisodesList|null => {
+    return this.playerEpisodesList.value;
+  });
+
+  /**
+   * Time played of current episode.
+   *
+   * @var { Ref<number> }
+   */
+  public timePlayed: Ref<number> = ref<number>(0);
+
+  /**
+   * Time played (in percentage) of current episode.
+   *
+   * @var { ComputedRef<number> }
+   */
+  public timePlayedInPercentage: ComputedRef<number> = computed<number>((): number => {
+    return (this.timePlayed.value * 100 / this.totalTime.value) || 0;
+  });
 
   /**
    * Get remaining time.
    *
-   * @returns { number }
+   * @returns { ComputedRef<number> }
    */
-  get remainingTime(): number {
-    return this.totalTime - this.currentTime;
-  }
+  public remainingTime: ComputedRef<number> = computed<number>((): number => {
+    return this.totalTime.value - this.timePlayed.value;
+  })
 
   /**
    * Get remaining time in percentage.
    *
-   * @returns { number }
+   * @returns { ComputedRef<number> }
    */
-  get remainingTimeInPercentage(): number {
-    return 100 - this.currentTimeInPercentage
-  }
+  public remainingTimeInPercentage: ComputedRef<number> = computed<number>((): number => {
+    return 100 - this.timePlayedInPercentage.value
+  });
 
   /**
-   * Get total time.
+   * Total time of episode.
    *
-   * @returns { number }
+   * @var { Ref<number> }
    */
-  get totalTime(): number {
-    return this.player.duration || 0;
-  }
+  public totalTime: Ref<number> = ref<number>(0);
+}
 
-  /**
-   * Get underlaying player instance.
-   *
-   * @returns { HTMLAudioElement }
-   */
-  get instance(): HTMLAudioElement {
-    return this.player;
-  }
+export type PlayerEpisodesList = {
+  show: Partial<Show>,
+  episodes: Partial<Episode>[]
 }
 
 export { Player };

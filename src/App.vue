@@ -1,5 +1,5 @@
 <template>
-  <div class="border-b border-grya-500 sticky top-0">
+  <div class="border-b sticky top-0 bg-white">
     <div class="max-w-3xl mx-auto py-10 px-15 flex items-center justify-between">
       <h1>
         <RouterLink to="/">
