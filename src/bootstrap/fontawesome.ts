@@ -9,6 +9,8 @@ import { faChevronLeft } from '@fortawesome/pro-regular-svg-icons/faChevronLeft'
 import { faChevronRight } from '@fortawesome/pro-regular-svg-icons/faChevronRight';
 import { faChevronUp } from '@fortawesome/pro-regular-svg-icons/faChevronUp';
 import { faList } from '@fortawesome/pro-regular-svg-icons/faList';
+import { faRotateLeft } from '@fortawesome/pro-regular-svg-icons/faRotateLeft';
+import { faRotateRight } from '@fortawesome/pro-regular-svg-icons/faRotateRight';
 import { faSearch } from '@fortawesome/pro-regular-svg-icons/faSearch';
 import { faXmark } from '@fortawesome/pro-regular-svg-icons/faXmark';
 
@@ -19,6 +21,8 @@ library.add(
   faChevronRight,
   faChevronUp,
   faList,
+  faRotateLeft,
+  faRotateRight,
   faSearch,
   faXmark
 );
@@ -30,12 +34,18 @@ import { faPause as faPauseSolid } from '@fortawesome/pro-solid-svg-icons/faPaus
 import { faPauseCircle as faPauseCircleSolid } from '@fortawesome/pro-solid-svg-icons/faPauseCircle';
 import { faPlay as faPlaySolid } from '@fortawesome/pro-solid-svg-icons/faPlay';
 import { faPlayCircle as faPlayCircleSolid } from '@fortawesome/pro-solid-svg-icons/faPlayCircle';
+import { faPowerOff as faPowerOffSolid } from '@fortawesome/pro-solid-svg-icons/faPowerOff';
+import { faRotateLeft as faRotateLeftSolid } from '@fortawesome/pro-solid-svg-icons/faRotateLeft';
+import { faRotateRight as faRotateRightSolid } from '@fortawesome/pro-solid-svg-icons/faRotateRight';
 
 library.add(
   faPauseSolid,
   faPauseCircleSolid,
   faPlaySolid,
-  faPlayCircleSolid
+  faPlayCircleSolid,
+  faPowerOffSolid,
+  faRotateLeftSolid,
+  faRotateRightSolid
 );
 
 /**

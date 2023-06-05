@@ -143,6 +143,50 @@ class Player {
   }
 
   /**
+   * Rewind episode.
+   *
+   * @param value { number }
+   * @returns { this }
+   */
+  public rewind = (value: number): this => {
+    const time = this.player.currentTime - value;
+    this.player.currentTime = (time < 0) ? 0 : time;
+    return this;
+  }
+
+  /**
+   * Fast forward episode.
+   *
+   * @param value { number }
+   * @returns { this }
+   */
+  public forward = (value: number): this => {
+    const time = this.player.currentTime + value;
+    this.player.currentTime = (time >= this.player.duration) ? this.player.duration : time;
+    return this;
+  }
+
+  /**
+   * "Quit" and reset player.
+   * @returns { this }
+   */
+  public quit = (): this => {
+    this.pause();
+
+    this.player.src = '';
+    this.player.load();
+
+    this.timePlayed.value = 0;
+    this.totalTime.value = 0;
+
+    this.currentlyPlaying.value = null;
+
+    this.emitter.emit('quit');
+
+    return this;
+  }
+
+  /**
    * Check a specific episode ID is currently playing.
    *
    * @param episodeId { number }
@@ -259,13 +303,26 @@ class Player {
   });
 
   /**
+   * Time played of current episode
+   * in a more readable format.
+   *
+   * @var { ComputedRef<string> }
+   */
+  public timePlayedAsReadable: ComputedRef<string> = computed<string>((): string => {
+    const hour = (this.timePlayed.value / 3600) % 24;
+    const minutes = (this.timePlayed.value / 60) % 60;
+    const seconds = this.timePlayed.value % 60;
+    return (hour >= 1 ? hour.toFixed().padStart(2, '0') + '.' : '') + minutes.toFixed().padStart(2, '0') + '.' + seconds.toFixed().padStart(2, '0');
+  });
+
+  /**
    * Get remaining time.
    *
    * @returns { ComputedRef<number> }
    */
   public remainingTime: ComputedRef<number> = computed<number>((): number => {
     return this.totalTime.value - this.timePlayed.value;
-  })
+  });
 
   /**
    * Get remaining time in percentage.
@@ -277,11 +334,37 @@ class Player {
   });
 
   /**
+   * Time played of current episode
+   * in a more readable format.
+   *
+   * @var { ComputedRef<string> }
+   */
+  public remainingTimeAsReadable: ComputedRef<string> = computed<string>((): string => {
+    const hour = (this.remainingTime.value / 3600) % 24;
+    const minutes = (this.remainingTime.value / 60) % 60;
+    const seconds = this.remainingTime.value % 60;
+    return '-' + (hour >= 1 ? hour.toFixed().padStart(2, '0') + '.' : '') + minutes.toFixed().padStart(2, '0') + '.' + seconds.toFixed().padStart(2, '0');
+  });
+
+  /**
    * Total time of episode.
    *
    * @var { Ref<number> }
    */
   public totalTime: Ref<number> = ref<number>(0);
+
+  /**
+   * Time played of current episode
+   * in a more readable format.
+   *
+   * @var { ComputedRef<string> }
+   */
+  public totalTimeAsReadable: ComputedRef<string> = computed<string>((): string => {
+    const hour = (this.totalTime.value / 3600) % 24;
+    const minutes = (this.totalTime.value / 60) % 60;
+    const seconds = this.totalTime.value % 60
+    return (hour >= 1 ? hour.toFixed().padStart(2, '0') + '.' : '') + minutes.toFixed().padStart(2, '0') + ':' + seconds.toFixed().padStart(2, '0');
+  });
 }
 
 export type PlayerEpisodesList = {
