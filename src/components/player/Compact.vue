@@ -1,12 +1,12 @@
 <template>
   <!-- Full player -->
-  <div class="w-full lg:max-w-3xl lg:mx-auto h-full py-25 lg:shadow-md bg-white/70 lg:left-1/2 lg:-translate-x-1/2 flex flex-col justify-between gap-30 fixed z-100 backdrop-filter backdrop-blur-md transition-all duration-300" :class="{ 'top-full': !isVisible || !isFullPlayerVisisble, 'top-0':  isVisible && isFullPlayerVisisble }">
+  <div class="w-full lg:max-w-3xl lg:mx-auto h-full py-25 lg:shadow-md bg-white/90 lg:left-1/2 lg:-translate-x-1/2 flex flex-col justify-between gap-30 fixed z-100 backdrop-filter backdrop-blur-md transition-all duration-300" :class="{ 'top-full': !isVisible || !isFullPlayerVisisble, 'top-0':  isVisible && isFullPlayerVisisble }">
     <div class="flex-none">
       <div class="relative">
         <button type="button" class="absolute top-1 right-25" @click="toggleFullPlayer">
           <FontAwesomeIcon :icon="['far', 'xmark']" class="text-23" />
         </button>
-        <h3 class="text-16 px-50 font-semibold text-center">{{ player.showEpisodes.value?.show.title }}</h3>
+        <h3 class="text-16 px-50 font-semibold text-center">Afspiller</h3>
       </div>
       <div class="p-20" :class="{ 'grayscale': !player.isPlaying.value }">
         <div class="w-[300px] h-[300px] mx-auto rounded-lg bg-contain bg-center" :style="'background-image: url(\'' + player.episode.value?.image.original + '\')'">
@@ -28,10 +28,10 @@
         </div>
       </div>
       <div class="px-45 flex items-center justify-center gap-20">
-        <div class="pr-18">
+        <div class="pr-16">
           <button type="button" class="flex items-center gap-2" @click="player.rewind(10)">
             <FontAwesomeLayers fixed-width>
-              <FontAwesomeIcon :icon="['far', 'rotate-left']" class="text-35" />
+              <FontAwesomeIcon :icon="['fal', 'rotate-left']" class="text-35" />
               <FontAwesomeLayersText transform="right-9 shrink-6" class="font-medium" value="10" />
             </FontAwesomeLayers>
           </button>
@@ -44,7 +44,7 @@
         <div class="pr-20">
           <button type="button" class="flex-1 flex items-center gap-2" @click="player.forward(15)">
             <FontAwesomeLayers fixed-width>
-              <FontAwesomeIcon :icon="['far', 'rotate-right']" class="text-35" />
+              <FontAwesomeIcon :icon="['fal', 'rotate-right']" class="text-35" />
               <FontAwesomeLayersText transform="right-7 shrink-6" class="font-medium" value="15" />
             </FontAwesomeLayers>
           </button>
@@ -59,7 +59,7 @@
     </div>
   </div>
   <!-- Episodes list -->
-  <div class="w-full lg:max-w-3xl lg:mx-auto h-full pt-25 pb-[66px] lg:shadow-md bg-white/70 lg:left-1/2 lg:-translate-x-1/2 flex flex-col fixed z-80 backdrop-filter backdrop-blur-md transition-all duration-300" :class="{ 'top-full': !isVisible || !isShowEpisodesVisible, 'top-0':  isVisible && isShowEpisodesVisible }">
+  <div class="w-full lg:max-w-3xl lg:mx-auto h-full pt-25 pb-[66px] lg:shadow-md bg-white/90 lg:left-1/2 lg:-translate-x-1/2 flex flex-col fixed z-80 backdrop-filter backdrop-blur-md transition-all duration-300" :class="{ 'top-full': !isVisible || !isShowEpisodesVisible, 'top-0':  isVisible && isShowEpisodesVisible }">
     <div class="flex-none">
       <div class="relative">
         <button type="button" class="absolute top-2 right-25" @click="toggleShowEpisodes">

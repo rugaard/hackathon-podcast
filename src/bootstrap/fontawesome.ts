@@ -28,8 +28,20 @@ library.add(
 );
 
 /**
+ * Load icons from "light" style.
+ */
+import { faRotateLeft as faRotateLeftLight } from '@fortawesome/pro-light-svg-icons/faRotateLeft';
+import { faRotateRight as faRotateRightLight } from '@fortawesome/pro-light-svg-icons/faRotateRight';
+
+library.add(
+  faRotateLeftLight,
+  faRotateRightLight
+);
+
+/**
  * Load icons from the "solid" style.
  */
+import { faHeadphones as faHeadphonesSolid } from '@fortawesome/pro-solid-svg-icons/faHeadphones';
 import { faPause as faPauseSolid } from '@fortawesome/pro-solid-svg-icons/faPause';
 import { faPauseCircle as faPauseCircleSolid } from '@fortawesome/pro-solid-svg-icons/faPauseCircle';
 import { faPlay as faPlaySolid } from '@fortawesome/pro-solid-svg-icons/faPlay';
@@ -39,6 +51,7 @@ import { faRotateLeft as faRotateLeftSolid } from '@fortawesome/pro-solid-svg-ic
 import { faRotateRight as faRotateRightSolid } from '@fortawesome/pro-solid-svg-icons/faRotateRight';
 
 library.add(
+  faHeadphonesSolid,
   faPauseSolid,
   faPauseCircleSolid,
   faPlaySolid,

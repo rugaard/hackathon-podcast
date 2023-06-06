@@ -1,7 +1,7 @@
-import { computed, ref, toRef, type ComputedRef, type Ref } from 'vue';
+import { computed, ref, type ComputedRef, type Ref } from 'vue';
 import EventEmitter from 'events';
-import { useLocalStorage } from './localStorage';
 import { Spreaker } from './spreaker';
+import { useLocalStorage } from './localStorage';
 import type { Episode, Show } from './types';
 
 class Player {
@@ -46,9 +46,9 @@ class Player {
    *
    * @param player { HTMLAudioElement }
    */
-  constructor() {
-    // Instantiate Spreaker API client.
-    this.api = new Spreaker('Hackathon');
+  constructor(brand: string) {
+    // Spreaker API.
+    this.api = new Spreaker(brand);
 
     // Create internal event emitter.
     this.emitter = new (EventEmitter as any)();

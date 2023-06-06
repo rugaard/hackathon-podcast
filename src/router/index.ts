@@ -9,9 +9,19 @@ const router = createRouter({
       component: () => import('../views/Index.vue')
     },
     {
-      path: '/other',
-      name: 'other',
-      component: () => import('../views/Other.vue')
+      path: '/article',
+      name: 'article',
+      component: () => import('../views/Article.vue')
+    },
+    {
+      path: '/podcasts',
+      name: 'podcasts',
+      component: () => import('../views/Podcasts.vue')
+    },
+    {
+      path: '/podcasts/:showId',
+      name: 'podcast-show',
+      component: () => import('../views/PodcastShow.vue')
     }
   ]
 })

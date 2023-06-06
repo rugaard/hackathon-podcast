@@ -13,5 +13,5 @@ import App from './App.vue';
 
 createApp(App)
   .use(router)
-  .use(PodcastPlayer)
+  .use(PodcastPlayer, 'Hackathon')
   .mount('#app');
