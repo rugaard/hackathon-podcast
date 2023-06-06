@@ -23,6 +23,11 @@ const router = createRouter({
       path: '/podcasts/:showId',
       name: 'podcast-show',
       component: () => import('../views/PodcastShow.vue')
+    },
+    {
+      path: '/hackathon',
+      name: 'hackathon',
+      component: () => import('../views/Hackathon.vue')
     }
   ]
 })

@@ -231,7 +231,12 @@ class Player {
         .on('pause', () => this.isPlaying.value = false)
         .on('play', () => this.isPlaying.value = true)
         .on('metadata', (self: this) => this.totalTime.value = self.player.duration || 0)
-        .on('time', (self: this) => this.timePlayed.value = self.player.currentTime || 0);
+        .on('time', (self: this) => {
+          console.log(`this.timePlayed.value (BEFORE) = ` + this.timePlayed.value);
+          console.log(`self.player.currentTime = ` + self.player.currentTime || 0);
+          this.timePlayed.value = self.player.currentTime || 0;
+          console.log(`this.timePlayed.value (AFTER) = ` + this.timePlayed.value);
+        });
   }
 
   /**
@@ -309,10 +314,10 @@ class Player {
    * @var { ComputedRef<string> }
    */
   public timePlayedAsReadable: ComputedRef<string> = computed<string>((): string => {
-    const hour = (this.timePlayed.value / 3600) % 24;
-    const minutes = (this.timePlayed.value / 60) % 60;
+    const hour = Math.floor((this.timePlayed.value / 3600) % 24);
+    const minutes = Math.floor((this.timePlayed.value / 60) % 60);
     const seconds = this.timePlayed.value % 60;
-    return (hour >= 1 ? hour.toFixed().padStart(2, '0') + '.' : '') + minutes.toFixed().padStart(2, '0') + '.' + seconds.toFixed().padStart(2, '0');
+    return (hour >= 1 ? hour.toFixed().padStart(2, '0') + '.' : '') + minutes.toFixed(0).padStart(2, '0') + '.' + seconds.toFixed().padStart(2, '0');
   });
 
   /**
@@ -340,10 +345,10 @@ class Player {
    * @var { ComputedRef<string> }
    */
   public remainingTimeAsReadable: ComputedRef<string> = computed<string>((): string => {
-    const hour = (this.remainingTime.value / 3600) % 24;
-    const minutes = (this.remainingTime.value / 60) % 60;
+    const hour = Math.floor((this.remainingTime.value / 3600) % 24);
+    const minutes = Math.floor((this.remainingTime.value / 60) % 60);
     const seconds = this.remainingTime.value % 60;
-    return '-' + (hour >= 1 ? hour.toFixed().padStart(2, '0') + '.' : '') + minutes.toFixed().padStart(2, '0') + '.' + seconds.toFixed().padStart(2, '0');
+    return '-' + (hour >= 1 ? hour.toFixed().padStart(2, '0') + '.' : '') + (minutes >= 1 ? minutes.toFixed().padStart(2, '0') : '00') + '.' + seconds.toFixed().padStart(2, '0');
   });
 
   /**
@@ -360,8 +365,8 @@ class Player {
    * @var { ComputedRef<string> }
    */
   public totalTimeAsReadable: ComputedRef<string> = computed<string>((): string => {
-    const hour = (this.totalTime.value / 3600) % 24;
-    const minutes = (this.totalTime.value / 60) % 60;
+    const hour = Math.floor((this.totalTime.value / 3600) % 24);
+    const minutes = Math.floor((this.totalTime.value / 60) % 60);
     const seconds = this.totalTime.value % 60
     return (hour >= 1 ? hour.toFixed().padStart(2, '0') + '.' : '') + minutes.toFixed().padStart(2, '0') + ':' + seconds.toFixed().padStart(2, '0');
   });
