@@ -9,7 +9,7 @@ export class Spreaker
      * @protected
      * @var { string }
      */
-    protected readonly baseUrl: string = 'https:/api.spreaker.com/v2';
+    protected readonly baseUrl: string = 'https://api.spreaker.com/v2';
 
     /**
      * Spreaker constructor.
@@ -192,7 +192,6 @@ export class Spreaker
     protected request = async (method: string, endpoint: string, parameters?: { [key: string]: string }): Promise<any> => {
         return fetch(this.baseUrl + endpoint + (parameters ? '?' + new URLSearchParams(parameters).toString() : ''), {
             method: method,
-            mode: 'cors',
             headers: {
               'Content-Type': 'application/json',
               //'User-Agent': 'Aller/' + this.brand
