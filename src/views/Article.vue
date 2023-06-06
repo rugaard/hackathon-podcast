@@ -1,7 +1,7 @@
 <template>
   <article class="px-15">
     <header>
-      <img src="https://imgix.elle.dk/2023-06-02/microsoftteams-image-27.png?ixlib=vue-2.9.1&auto=format&ar=940%3A530&fit=crop&fp-x=0.5&fp-y=0.5&w=940" class="w-full mb-15 rounded-lg" alt="" />
+      <img src="https://imgix.elle.dk/2023-06-02/microsoftteams-image-27.png?ixlib=vue-2.9.1&auto=format&ar=940%3A530&fit=crop&fp-x=0.5&fp-y=0.5&w=940" class="w-full mb-15" alt="" />
       <h1 class="text-17 font-medium italic text-center">For 22 år siden slog Lina Rafn et slag for musikbranchen: "Jeg tabte i Højesteret med en farce af en retssag"</h1>
     </header>
     <div class="text-14 leading-22 mt-15 space-y-22">
@@ -36,7 +36,7 @@
       </div>
       <p>“Det er ikke sådan, at hende jeg dansede for, kom med sminke og hvad ved jeg. Det forventedes, at jeg selv kom med det. Det er jo en del af mit job, det må jeg kunne trække fra. Og det endte altid med, at jeg skulle betale de penge, og det synes jeg simpelthen ikke, kunne være rigtigt,” fortæller Lina Rafn i det nye afsnit af ELLEs podcast 'Klædt På', hvor hun fortæller om, hvordan sagen påvirkede både hende og branchen.</p>
       <p>Da Infernal i 00’erne går fra at være upcoming til at være et kendt navn både hjemme og i udlandet, får Rafn stadig brug for essentielle ting til garderoben og makeuppen for at fuldende sine vilde performances. Men da Skat stadig ikke anerkender tingene som en del af hendes arbejde, tager hun den videre.</p>
-      <RouterLink :to="{ name: 'podcast-show', params: { showId: show.id }}"  class="w-[300px] h-[300px] mx-auto rounded-lg bg-contain bg-center relative block" :style="'background-image: url(\'' + show.image.original + '\')'" v-if="show">
+      <RouterLink :to="{ name: 'podcast-show', params: { showId: show.id }}"  class="w-[300px] h-[300px] mx-auto rounded-lg bg-contain bg-center relative z-0 block" :style="'background-image: url(\'' + show.image.original + '\')'" v-if="show">
         <div class="w-full h-full p-50 bg-white/40 backdrop-filter backdrop-blur rounded-lg">
           <img :src="show.image.original" class="h-[200px]" alt="" />
         </div>
