@@ -194,7 +194,7 @@ export class Spreaker
             method: method,
             headers: {
               'Content-Type': 'application/json',
-              'User-Agent': 'Aller/' + this.brand
+              //'User-Agent': 'Aller/' + this.brand
             }
         }).then(async (response: Response) => {
           // Request error handling.

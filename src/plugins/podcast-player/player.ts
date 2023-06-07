@@ -115,7 +115,7 @@ class Player {
    * @returns { this }
    */
   protected loadAndPlay = (episode: Episode, startPosition?: number): this => {
-    this.load(episode, startPosition).play();
+    return this.load(episode, startPosition).play();
   }
 
   /**
