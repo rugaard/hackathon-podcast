@@ -2,7 +2,7 @@ import { computed, ref, type ComputedRef, type Ref } from 'vue';
 import EventEmitter from 'events';
 import { Spreaker } from './spreaker';
 import { useLocalStorage } from './localStorage';
-import type { Episode, Show } from './types';
+import type { Episode, PlayerCurrentlyPlaying, PlayerEpisodesList } from './types';
 
 class Player {
   /**
@@ -32,7 +32,7 @@ class Player {
    *
    * @var { Ref<Episode|null> }
    */
-  protected currentlyPlaying: Ref<Episode|null> = useLocalStorage('player.currently_playing', null);
+  protected currentlyPlaying: Ref<PlayerCurrentlyPlaying|null> = useLocalStorage('player.currently_playing', null);
 
   /**
    * Player episodes list.
@@ -62,7 +62,7 @@ class Player {
     // We have an episode in local storage,
     // let's use to preload the player.
     if (this.currentlyPlaying.value !== null) {
-      this.load(this.currentlyPlaying.value);
+      this.load(this.currentlyPlaying.value.episode, this.currentlyPlaying.value.timeElapsed || undefined);
     }
   }
 
@@ -78,7 +78,10 @@ class Player {
     this.loadAndPlay(episode);
 
     // Set episode as currently playing.
-    this.currentlyPlaying.value = episode;
+    this.currentlyPlaying.value = {
+      timeElapsed: 0,
+      episode: episode
+    };
 
     if (this.playerEpisodesList.value?.show.id !== episode.show_id) {
       this.playerEpisodesList.value = {
@@ -96,8 +99,11 @@ class Player {
    * @param episode { Episode }
    * @returns { this }
    */
-  protected load = (episode: Episode): this => {
+  protected load = (episode: Episode, startPosition?: number): this => {
     this.player.src = episode.url;
+    if (startPosition) {
+      this.player.currentTime = startPosition;
+    }
     this.player.load();
     return this;
   }
@@ -108,8 +114,8 @@ class Player {
    * @param episode { Episode }
    * @returns { this }
    */
-  protected loadAndPlay = (episode: Episode): this => {
-    return this.load(episode).play();
+  protected loadAndPlay = (episode: Episode, startPosition?: number): this => {
+    this.load(episode, startPosition).play();
   }
 
   /**
@@ -180,6 +186,7 @@ class Player {
     this.totalTime.value = 0;
 
     this.currentlyPlaying.value = null;
+    this.playerEpisodesList.value = null;
 
     this.emitter.emit('quit');
 
@@ -193,7 +200,7 @@ class Player {
    * @returns { boolean }
    */
   public isEpisodePlaying = (episodeId: number): boolean => {
-    return this.currentlyPlaying.value?.id === episodeId;
+    return this.currentlyPlaying.value?.episode.id === episodeId;
   }
 
   /**
@@ -232,10 +239,15 @@ class Player {
         .on('play', () => this.isPlaying.value = true)
         .on('metadata', (self: this) => this.totalTime.value = self.player.duration || 0)
         .on('time', (self: this) => {
-          console.log(`this.timePlayed.value (BEFORE) = ` + this.timePlayed.value);
-          console.log(`self.player.currentTime = ` + self.player.currentTime || 0);
-          this.timePlayed.value = self.player.currentTime || 0;
-          console.log(`this.timePlayed.value (AFTER) = ` + this.timePlayed.value);
+          const currentTime = self.player.currentTime || 0;
+          const currentEpisode = this.currentlyPlaying.value!.episode;
+
+          this.currentlyPlaying.value = {
+            timeElapsed: currentTime,
+            episode: currentEpisode
+          };
+
+          this.timePlayed.value = currentTime;
         });
   }
 
@@ -279,7 +291,7 @@ class Player {
    * @var { ComputedRef<Episode|null> }
    */
   public episode = computed<Episode|null>((): Episode|null => {
-    return this.currentlyPlaying.value;
+    return this.currentlyPlaying.value?.episode || null;
   });
 
   /**
@@ -370,11 +382,6 @@ class Player {
     const seconds = this.totalTime.value % 60
     return (hour >= 1 ? hour.toFixed().padStart(2, '0') + '.' : '') + minutes.toFixed().padStart(2, '0') + ':' + seconds.toFixed().padStart(2, '0');
   });
-}
-
-export type PlayerEpisodesList = {
-  show: Partial<Show>,
-  episodes: Partial<Episode>[]
 }
 
 export { Player };

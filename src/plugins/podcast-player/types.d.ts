@@ -85,3 +85,13 @@ export type Transcript = {
   type: string
   url: string
 }
+
+export type PlayerCurrentlyPlaying = {
+  timeElapsed: number,
+  episode: Episode
+}
+
+export type PlayerEpisodesList = {
+  show: Partial<Show>,
+  episodes: Partial<Episode>[]
+}
