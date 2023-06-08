@@ -235,10 +235,8 @@ export class Initialize extends AbstractStack {
           version: 0.2,
           phases: {
             install: {
-              'runtime-versions': {
-                nodejs: '18'
-              },
               commands: [
+                'n install 18',
                 'npm config set @aller:registry https://npm.pkg.github.com/aller',
                 'npm config set //npm.pkg.github.com/:_authToken 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',
                 'npm install'
@@ -275,10 +273,8 @@ export class Initialize extends AbstractStack {
           version: '0.2',
           phases: {
             install: {
-              'runtime-versions': {
-                nodejs: '18'
-              },
               commands: [
+                'n install 18',
                 'npm config set @aller:registry https://npm.pkg.github.com/aller',
                 'npm config set //npm.pkg.github.com/:_authToken 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',
                 'npm install'
@@ -291,10 +287,8 @@ export class Initialize extends AbstractStack {
               ]
             },
             build: {
-              'runtime-versions': {
-                nodejs: '18'
-              },
               commands: [
+                'n install 18',
                 'npm run build'
               ]
             },

@@ -2,14 +2,14 @@ import type { IConstruct } from 'constructs';
 import { RemovalPolicy, Stack, type StackProps, Tags, Duration } from 'aws-cdk-lib';
 import { StringParameter as SSMStringParameter } from 'aws-cdk-lib/aws-ssm';
 import { CnameRecord, type IPublicHostedZone, PublicHostedZone, ARecord, RecordTarget } from 'aws-cdk-lib/aws-route53';
-import { type ISecurityGroup, InterfaceVpcEndpointAwsService, IpAddresses, Peer, Port, SecurityGroup, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { type ISecurityGroup, InterfaceVpcEndpointAwsService, IpAddresses, Peer, Port, SecurityGroup, SubnetType, Vpc, IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Certificate, CertificateValidation, type ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { Effect, type IRole, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { type IRepository, Repository } from 'aws-cdk-lib/aws-ecr';
 import { AwsLogDriver, Cluster, ContainerDefinition, ContainerImage, FargatePlatformVersion, FargateService, FargateTaskDefinition, type ICluster, type IFargateService, Protocol, UlimitName } from 'aws-cdk-lib/aws-ecs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { AwsCustomResource, AwsCustomResourcePolicy } from 'aws-cdk-lib/custom-resources';
-import { ApplicationListener, ApplicationLoadBalancer, ApplicationProtocol, ApplicationTargetGroup, type IApplicationLoadBalancer, ListenerAction, TargetType, ApplicationListenerCertificate, ListenerCertificate } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { ApplicationListener, ApplicationLoadBalancer, ApplicationProtocol, ApplicationTargetGroup, type IApplicationLoadBalancer, ListenerAction, TargetType, ApplicationListenerCertificate, ListenerCertificate, ListenerCondition } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { LoadBalancerV2Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { AllowedMethods, CachePolicy, Distribution, OriginProtocolPolicy, OriginRequestCookieBehavior, OriginRequestHeaderBehavior, OriginRequestPolicy, OriginRequestQueryStringBehavior, ResponseHeadersPolicy, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { AbstractStack } from './AbstractStack';
@@ -46,10 +46,16 @@ export class Application extends AbstractStack {
    * VPC instance.
    *
    * @protected
-   * @var { AllerVpcResource }
+   * @var { IVpc }
    */
-  protected vpc: any;
+  protected vpc: IVpc;
 
+  /**
+   * Certificate.
+   *
+   * @protected
+   * @var { ICertificate }
+   */
   protected certificate: ICertificate;
 
   /**
@@ -137,7 +143,6 @@ export class Application extends AbstractStack {
       vpcName: this.config.name,
       ipAddresses: IpAddresses.cidr('10.0.0.0/16'),
       natGateways: 2,
-      maxAzs: 3,
       subnetConfiguration: [
         {
           name: 'public-subnet',
@@ -185,6 +190,14 @@ export class Application extends AbstractStack {
     vpc.addInterfaceEndpoint('ecr-docker', {
       securityGroups: [securityGroup],
       service: InterfaceVpcEndpointAwsService.ECR_DOCKER
+    });
+    vpc.addInterfaceEndpoint('ecs', {
+      securityGroups: [securityGroup],
+      service: InterfaceVpcEndpointAwsService.ECS
+    });
+    vpc.addInterfaceEndpoint('ecs-agent', {
+      securityGroups: [securityGroup],
+      service: InterfaceVpcEndpointAwsService.ECS_AGENT
     });
     vpc.addInterfaceEndpoint('ssm', {
       securityGroups: [securityGroup],
@@ -290,18 +303,22 @@ export class Application extends AbstractStack {
       logging: new AwsLogDriver({
         streamPrefix: `${this.config.name}/${this.config.environment}/ecs/cluster/app`,
         logGroup
-      })
-    })
-    app.addPortMappings({
-      containerPort: 80,
-      hostPort: 80,
-      protocol: Protocol.TCP
-    })
-    app.addUlimits({
-      name: UlimitName.NOFILE,
-      softLimit: 32768,
-      hardLimit: 32768
-    })
+      }),
+      portMappings: [{
+        containerPort: 80,
+        hostPort: 80,
+        protocol: Protocol.TCP
+      }/*, {
+        containerPort: 443,
+        hostPort: 443,
+        protocol: Protocol.TCP
+      }*/],
+      ulimits: [{
+        name: UlimitName.NOFILE,
+        softLimit: 32768,
+        hardLimit: 32768
+      }]
+    });
 
     // Set default container of task.
     task.defaultContainer = app;
@@ -319,8 +336,8 @@ export class Application extends AbstractStack {
         weight: 1,
       }],
       vpcSubnets: {
-        subnets: this.vpc.privateSubnets
-      },
+        subnetType: SubnetType.PRIVATE_WITH_EGRESS
+      }
     });
 
     return this;
@@ -332,90 +349,60 @@ export class Application extends AbstractStack {
    * @returns { this }
    */
   protected loadBalancer = (): this => {
-    // Create load balancer security group,
-    // with Cloudfront IP list.
-    const loadBalancerSecurityGroup = this.securityGroups['loadBalancer'] = new SecurityGroup(this, `${this.config.name}-security-group-${this.config.environment}-load-balancer`, {
-      vpc: this.vpc,
-      securityGroupName: `${this.config.name}-${this.config.environment}-load-balancer`,
-      allowAllOutbound: true,
-    });
-
-    const cloudFrontIPList = new AwsCustomResource(this, `${this.config.name}-custom-resource-cloudfront-ips`, {
-      resourceType: 'Custom::GetPrefixListIds',
-      onUpdate: {
-        service: 'EC2',
-        action: 'describeManagedPrefixLists',
-        region: Stack.of(this).region,
-        parameters: {
-          Filters: [{
-            Name: 'prefix-list-name',
-            Values: ['com.amazonaws.global.cloudfront.origin-facing'],
-          }]
-        },
-        physicalResourceId: {}
-      },
-      policy: AwsCustomResourcePolicy.fromSdkCalls({
-        resources: AwsCustomResourcePolicy.ANY_RESOURCE,
-      }),
-    });
-
-    // Add tags to resource.
-    Tags.of(cloudFrontIPList).add('Name', this.config.name);
-
-    // Add ingress rules.
-    loadBalancerSecurityGroup.addIngressRule(loadBalancerSecurityGroup, Port.allTraffic(), 'Allow security group to talk to itself');
-    loadBalancerSecurityGroup.addIngressRule(Peer.prefixList(cloudFrontIPList.getResponseField('PrefixLists.0.PrefixListId')), Port.tcp(80), 'Allow connections from Cloudfront IP list.');
-
-    // Add tag to security group.
-    Tags.of(loadBalancerSecurityGroup).add('Name', this.config.name);
-
-    // Create SSM parameter with instance reference.
-    this.createSSMParameter(`${this.config.name}-security-group-${this.config.environment}-load-balancer-id`, `${this.config.name}/security-groups/${this.config.environment}/load-balancer/id`, loadBalancerSecurityGroup.securityGroupId);
-
     // Create load balancer.
     const loadBalancer = this.applicationLoadBalancer = new ApplicationLoadBalancer(this, `${this.config.name}-application-load-balancer-${this.config.environment}-app`, {
       loadBalancerName: `${this.config.name}-${this.config.environment}`,
       internetFacing: true,
       http2Enabled: true,
-      securityGroup: loadBalancerSecurityGroup,
+      securityGroup: this.securityGroups['base'],
+      vpcSubnets: {
+        subnets: this.vpc.publicSubnets
+      },
       vpc: this.vpc,
+    });
+
+    // Create HTTP listener.
+    loadBalancer.addListener(`${this.config.name}-application-listener-${this.config.environment}-app-redirect-to-https`, {
+      protocol: ApplicationProtocol.HTTP,
+      open: true,
+      defaultAction: ListenerAction.redirect({
+        port: '443',
+        protocol: ApplicationProtocol.HTTPS,
+        permanent: true,
+      })
+    });
+
+    // Create HTTPS listener.
+    const httpsListener = new ApplicationListener(this, `${this.config.name}-application-listener-${this.config.environment}-app-public`, {
+      loadBalancer,
+      protocol: ApplicationProtocol.HTTPS,
+      open: true,
+      certificates: [ListenerCertificate.fromCertificateManager(this.certificate)],
+      defaultAction: ListenerAction.fixedResponse(403, { contentType: 'text/plain', messageBody: 'Forbidden' }),
     });
 
     // Create target group.
     const applicationTargetGroup = new ApplicationTargetGroup(this, `${this.config.name}-target-group-${this.config.environment}-app`, {
       targetGroupName: `${this.config.name}-${this.config.environment}-app`,
       targetType: TargetType.IP,
-      port: 443,
-      protocol: ApplicationProtocol.HTTPS,
+      protocol: ApplicationProtocol.HTTP,
       targets: [this.ecsService],
       healthCheck: {
-        path: '/',
+        path: '/robots.txt',
         healthyHttpCodes: '200,204',
       },
       vpc: this.vpc,
     });
 
-    loadBalancer.addListener(`${this.config.name}-application-listener-${this.config.environment}-app-redirect-to-https`, {
-      protocol: ApplicationProtocol.HTTP,
-      port: 80,
-      open: true,
-      defaultAction: ListenerAction.redirect({
-        port: '443',
-        protocol: ApplicationProtocol.HTTPS,
-        permanent: true,
-      }),
-    });
-
-    loadBalancer.addListener(`${this.config.name}-application-listener-${this.config.environment}-app-public`, {
-      protocol: ApplicationProtocol.HTTPS,
-      port: 443,
-      open: true,
-      defaultTargetGroups: [applicationTargetGroup],
-      certificates: [ListenerCertificate.fromArn(this.certificate.certificateArn)],
+    // Add target group til HTTPS listener.
+    httpsListener.addTargetGroups('app', {
+      conditions: [ListenerCondition.pathPatterns(['/*'])],
+      priority: 50,
+      targetGroups: [applicationTargetGroup]
     });
 
     // Output load balancer DNS.
-    this.createOutputParameter('LoadBalancerURL', loadBalancer.loadBalancerDnsName);
+    this.createOutputParameter('LoadBalancerDNS', loadBalancer.loadBalancerDnsName);
 
     const ARecordDomain = new ARecord(this, `${this.config.name}-route53-arecord-${this.config.domain}`, {
       recordName: this.config.domain,
@@ -425,22 +412,11 @@ export class Application extends AbstractStack {
       zone: this.hostedZone
     });
 
-    // Create CNAMEs foreach domain name
-    // and point it to the Cloudfront distribution.
-    /*
-    const CnameDomainName = new ARecord(this, `${this.config.name}-route53-cname-${this.config.domain}`, {
-      ttl: Duration.seconds(300),
-      recordName: this.config.domain,
-      domainName: loadBalancer.loadBalancerDnsName,
-      comment: `${this.config.domain} CNAME record for domain [${loadBalancer.loadBalancerDnsName}] for project [${this.config.name}]`,
-      zone: this.hostedZone
-    });
-    */
     // Add tag to CNAME
     Tags.of(ARecordDomain).add('Name', this.config.name);
 
-    // Output CNAME domain.
-    this.createOutputParameter('SiteURL', ARecordDomain.domainName);
+    // Output Site URL.
+    this.createOutputParameter('SiteURL', ApplicationProtocol.HTTP.toLowerCase() + '://' + ARecordDomain.domainName);
 
     return this;
   }
