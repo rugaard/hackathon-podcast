@@ -6,6 +6,7 @@ import { type IRepository, Repository, RepositoryEncryption } from 'aws-cdk-lib/
 import { type IPublicHostedZone, PublicHostedZone } from 'aws-cdk-lib/aws-route53';
 import { CrossRegionParameter } from '@alma-cdk/cross-region-parameter';
 import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { BuildSpec, BuildEnvironmentVariableType, ComputeType, LinuxBuildImage, PipelineProject } from 'aws-cdk-lib/aws-codebuild';
 import { CloudFormationCreateReplaceChangeSetAction, CloudFormationExecuteChangeSetAction, CodeBuildAction, CodeStarConnectionsSourceAction } from 'aws-cdk-lib/aws-codepipeline-actions';
 import type { Config, EnvironmentConfig } from '..';
@@ -195,6 +196,10 @@ export class Initialize extends AbstractStack {
    * @returns { this }
    */
   protected createEnvironment = (config: EnvironmentConfig): this => {
+    // Get Aller GitHub NPM secret.
+    const allerGitHubNpmToken = Secret.fromSecretCompleteArn(this, `${config.name}-${config.environment}-pipeline-codebuild-secret`, 'arn:aws:secretsmanager:eu-west-1:919232675069:secret:aller/github/npm/token-BRcXBR');
+    allerGitHubNpmToken.grantRead(this.codeBuildRole);
+
     // Create CodePipeline for environment.
     const pipeline = new Pipeline(this, `${config.name}-${config.environment}-pipeline`, {
       pipelineName: `${config.name}-${config.environment}`,
@@ -238,7 +243,7 @@ export class Initialize extends AbstractStack {
               commands: [
                 'n install 18',
                 'npm config set @aller:registry https://npm.pkg.github.com/aller',
-                'npm config set //npm.pkg.github.com/:_authToken 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',
+                'npm config set //npm.pkg.github.com/:_authToken ${ALLER_GITHUB_NPM}',
                 'npm install'
               ]
             },
@@ -256,7 +261,10 @@ export class Initialize extends AbstractStack {
         environment: {
           computeType: ComputeType.SMALL,
           buildImage: LinuxBuildImage.STANDARD_6_0,
-          privileged: true
+          privileged: true,
+          environmentVariables: {
+            ALLER_GITHUB_NPM: { type: BuildEnvironmentVariableType.SECRETS_MANAGER, value: allerGitHubNpmToken.secretName }
+          }
         }
       }),
       runOrder: 1,
@@ -276,7 +284,7 @@ export class Initialize extends AbstractStack {
               commands: [
                 'n install 18',
                 'npm config set @aller:registry https://npm.pkg.github.com/aller',
-                'npm config set //npm.pkg.github.com/:_authToken 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',
+                'npm config set //npm.pkg.github.com/:_authToken ${ALLER_GITHUB_NPM}',
                 'npm install'
               ]
             },
@@ -294,7 +302,7 @@ export class Initialize extends AbstractStack {
             },
             post_build: {
               commands: [
-                'docker build --compress --tag ${ECR_REPOSITORY_DOMAIN}:${TAG} --file .aws/docker/Dockerfile ./dist',
+                'docker build --compress --tag ${ECR_REPOSITORY_DOMAIN}:${TAG} --file .aws/docker/Dockerfile ./',
                 'docker tag ${ECR_REPOSITORY_DOMAIN}:${TAG} ${ECR_REPOSITORY_DOMAIN}:latest',
                 'docker push "${ECR_REPOSITORY_DOMAIN}:${TAG}"',
                 'docker push "${ECR_REPOSITORY_DOMAIN}:latest"'
@@ -307,6 +315,7 @@ export class Initialize extends AbstractStack {
           buildImage: LinuxBuildImage.STANDARD_6_0,
           privileged: true,
           environmentVariables: {
+            ALLER_GITHUB_NPM: { type: BuildEnvironmentVariableType.SECRETS_MANAGER, value: allerGitHubNpmToken.secretName },
             AWS_ECR: { type: BuildEnvironmentVariableType.PLAINTEXT, value: `${Stack.of(this).account}.dkr.ecr.${Stack.of(this).region}.amazonaws.com` },
             COMMIT_ID: { type: BuildEnvironmentVariableType.PLAINTEXT, value: source.variables.commitId },
             ECR_REPOSITORY_DOMAIN: { type: BuildEnvironmentVariableType.PLAINTEXT, value: this.repository.repositoryUri },
