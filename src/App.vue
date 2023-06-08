@@ -77,10 +77,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { usePodcastPlayer, type Episode } from '@/plugins/podcast-player';
+import { usePodcastPlayer } from '@/plugins/podcast-player';
 
 import Player from '@/components/Player.vue';
 
@@ -116,26 +116,4 @@ const toggle = () => {
 const isVisible = computed<boolean>((): boolean => {
   return podcastPlayer.episode.value !== null;
 });
-
-/**
- * ------------------------------------------
- * Watchers
- * ------------------------------------------
- */
-watch(() => podcastPlayer.episode.value, (episode: Episode) => {
-  navigator.mediaSession.metadata = new MediaMetadata({
-    title: episode.title,
-    artist: episode.show.title,
-    album: episode.show.title,
-    artwork: [{
-      src: episode.image.url,
-      sizes: '200x200',
-      type: 'image/jpeg',
-    }, {
-      src: episode.image.original,
-      sizes: '1400x1400',
-      type: 'image/jpeg',
-    }]
-  });
-})
 </script>
