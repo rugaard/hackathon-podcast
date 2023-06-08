@@ -21,7 +21,7 @@
         <div class="my-30 flex items-center justify-between gap-10">
           <span class="w-[40px] text-13 flex-none text-right">{{ player.timePlayedAsReadable.value }}</span>
           <div class="flex-1 flex flex-col items-center justify-center relative">
-            <input type="range" class="w-full h-5 accent-pink-300 bg-transparent absolute -top-3 z-1 appearance-none" @change="(event: Event) => player.position(event.target?.value)" :value="player.timePlayedInPercentage.value || 0" min="0" max="100" />
+            <input type="range" class="w-full h-5 accent-pink-300 bg-transparent absolute -top-3 z-1 appearance-none" @change="(event: any) => player.position(event.target?.value || undefined)" :value="player.timePlayedInPercentage.value || 0" min="0" max="100" />
             <progress class="w-full h-5 appearance-none [&::-webkit-progress-bar]:rounded-lg [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:rounded-lg [&::-webkit-progress-value]:bg-pink-300 absolute -top-3" :value="player.timePlayedInPercentage.value || 0" max="100">{{ (player.timePlayedInPercentage.value || 0) }}%</progress>
           </div>
           <span class="w-[40px] text-13 flex-none">{{ player.remainingTimeAsReadable.value }}</span>

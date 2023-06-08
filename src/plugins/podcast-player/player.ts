@@ -176,7 +176,11 @@ class Player {
    * @param percentage { number }
    * @returns { this }
    */
-  public position = (percentage: number): this => {
+  public position = (percentage?: number): this => {
+    if (!percentage) {
+      return this;
+    }
+
     const time = this.player.duration * percentage / 100;
     this.player.currentTime = time;
     return this;
@@ -201,17 +205,12 @@ class Player {
   public quit = (): this => {
     this.pause();
 
-    this.player.src = '';
-    this.player.load();
-
     this.timePlayed.value = 0;
     this.totalTime.value = 0;
 
     this.currentlyPlaying.value = null;
     this.activeEpisode.value = null;
     this.playerEpisodesList.value = null;
-
-    this.emitter.emit('quit');
 
     return this;
   }
@@ -264,7 +263,7 @@ class Player {
         .on('metadata', (self: this) => this.totalTime.value = self.player.duration || 0)
         .on('time', (self: this) => {
           const currentTime = self.player.currentTime || 0;
-          this.timePlayed.value = currentTime;
+          this.timePlayed.value = isNaN(currentTime) ? 0 : currentTime;
 
           const currentEpisode = this.currentlyPlaying.value?.episode;
           if (!currentEpisode) {
@@ -349,6 +348,10 @@ class Player {
    * @var { ComputedRef<number> }
    */
   public timePlayedInPercentage: ComputedRef<number> = computed<number>((): number => {
+    if (this.timePlayed.value === 0 || this.totalTime.value === 0) {
+      return 0;
+    }
+
     return (this.timePlayed.value * 100 / this.totalTime.value) || 0;
   });
 

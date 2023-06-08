@@ -21,7 +21,12 @@ const podcastPlayer = usePodcastPlayer();
  * Watchers
  * ------------------------------------------
  */
-watch(() => podcastPlayer.episode.value, (episode: Episode) => {
+watch(() => podcastPlayer.episode.value, (episode: Episode|null) => {
+  if (!episode) {
+    navigator.mediaSession.metadata = null;
+    return;
+  }
+
   navigator.mediaSession.metadata = new MediaMetadata({
     title: episode.title,
     artist: episode.show.title,
