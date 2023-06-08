@@ -161,6 +161,18 @@ class Player {
   }
 
   /**
+   * Set time position of player.
+   *
+   * @param percentage { number }
+   * @returns { this }
+   */
+  public position = (percentage: number): this => {
+    const time = this.player.duration * percentage / 100;
+    this.player.currentTime = time;
+    return this;
+  }
+
+  /**
    * Fast forward episode.
    *
    * @param value { number }
