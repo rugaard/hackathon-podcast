@@ -28,11 +28,18 @@ class Player {
   protected player: HTMLAudioElement;
 
   /**
-   * Episode currently playing.
+   * Currently playing episode information.
+   *
+   * @var { Ref<PlayerCurrentlyPlaying|null> }
+   */
+  protected currentlyPlaying: Ref<PlayerCurrentlyPlaying|null> = useLocalStorage('player.currently_playing', null);
+
+  /**
+   * Currently active episode.
    *
    * @var { Ref<Episode|null> }
    */
-  protected currentlyPlaying: Ref<PlayerCurrentlyPlaying|null> = useLocalStorage('player.currently_playing', null);
+  protected activeEpisode: Ref<Episode|null> = ref<Episode|null>(null);
 
   /**
    * Player episodes list.
@@ -82,6 +89,9 @@ class Player {
       timeElapsed: 0,
       episode: episode
     };
+
+    // Set active episode.
+    this.activeEpisode.value = episode;
 
     if (this.playerEpisodesList.value?.show.id !== episode.show_id) {
       this.playerEpisodesList.value = {
@@ -198,6 +208,7 @@ class Player {
     this.totalTime.value = 0;
 
     this.currentlyPlaying.value = null;
+    this.activeEpisode.value = null;
     this.playerEpisodesList.value = null;
 
     this.emitter.emit('quit');
@@ -212,7 +223,7 @@ class Player {
    * @returns { boolean }
    */
   public isEpisodePlaying = (episodeId: number): boolean => {
-    return this.currentlyPlaying.value?.episode.id === episodeId;
+    return this.activeEpisode.value?.id === episodeId;
   }
 
   /**
@@ -245,21 +256,31 @@ class Player {
    * @returns { this }
    */
   private registerListenerEvents = (): this => {
-    return this.on('load', () => this.isPlayable.value = false)
+    return this.on('error', (event: ErrorEvent) => console.error('[Podcast Player] Error: ' + event.message || 'Unknown'))
+        .on('load', () => this.isPlayable.value = false)
         .on('playable', () => this.isPlayable.value = true)
         .on('pause', () => this.isPlaying.value = false)
         .on('play', () => this.isPlaying.value = true)
         .on('metadata', (self: this) => this.totalTime.value = self.player.duration || 0)
         .on('time', (self: this) => {
           const currentTime = self.player.currentTime || 0;
-          const currentEpisode = this.currentlyPlaying.value!.episode;
+          this.timePlayed.value = currentTime;
+
+          const currentEpisode = this.currentlyPlaying.value?.episode;
+          if (!currentEpisode) {
+            this.activeEpisode.value = null;
+            this.currentlyPlaying.value = null;
+            return;
+          }
+
+          if (this.activeEpisode.value?.id !== currentEpisode.id) {
+            this.activeEpisode.value = currentEpisode;
+          }
 
           this.currentlyPlaying.value = {
             timeElapsed: currentTime,
             episode: currentEpisode
           };
-
-          this.timePlayed.value = currentTime;
         });
   }
 
@@ -272,7 +293,7 @@ class Player {
     this.player.addEventListener('loadstart', (event: Event) => this.emitter.emit('load', this, event));
     this.player.addEventListener('loadedmetadata', (event: Event) => this.emitter.emit('metadata', this, event));
     this.player.addEventListener('canplay', (event: Event) => this.emitter.emit('playable', this, event));
-    this.player.addEventListener('error', (event: Event) => this.emitter.emit('error', this, event));
+    this.player.addEventListener('error', (event: ErrorEvent) => this.emitter.emit('error', this, event));
     this.player.addEventListener('ended', (event: Event) => this.emitter.emit('complete', this, event));
     this.player.addEventListener('pause', (event: Event) => this.emitter.emit('pause', this, event));
     this.player.addEventListener('play', (event: Event) => this.emitter.emit('play', this, event));
@@ -303,7 +324,7 @@ class Player {
    * @var { ComputedRef<Episode|null> }
    */
   public episode = computed<Episode|null>((): Episode|null => {
-    return this.currentlyPlaying.value?.episode || null;
+    return this.activeEpisode.value || null;
   });
 
   /**
