@@ -59,7 +59,7 @@
     </div>
   </div>
   <!-- Episodes list -->
-  <div class="w-full lg:max-w-3xl lg:mx-auto h-full pt-25 pb-[66px] lg:shadow-md bg-white/90 lg:left-1/2 lg:-translate-x-1/2 flex flex-col fixed z-80 backdrop-filter backdrop-blur-md transition-all duration-300" :class="{ 'top-full': !isVisible || !isShowEpisodesVisible, 'top-0':  isVisible && isShowEpisodesVisible }">
+  <div class="w-full lg:max-w-3xl lg:mx-auto h-full pt-25 pb-[66px] lg:shadow-md bg-white/90 lg:left-1/2 lg:-translate-x-1/2 flex flex-col fixed z-80 backdrop-filter backdrop-blur-md transition-all duration-300 cursor-pointer" :class="{ 'top-full': !isVisible || !isShowEpisodesVisible, 'top-0':  isVisible && isShowEpisodesVisible }">
     <div class="flex-none">
       <div class="relative">
         <button type="button" class="absolute top-2 right-25" @click="toggleShowEpisodes">
