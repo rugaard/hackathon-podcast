@@ -298,7 +298,7 @@ export class Application extends AbstractStack {
     const app = new ContainerDefinition(this, `${this.config.name}-ecs-container-${this.config.environment}-app`, {
       taskDefinition: task,
       containerName: 'app',
-      image: ContainerImage.fromEcrRepository(this.repository, 'latest'),
+      image: ContainerImage.fromEcrRepository(this.repository, this.node.tryGetContext('CommitId')),
       essential: true,
       logging: new AwsLogDriver({
         streamPrefix: `${this.config.name}/${this.config.environment}/ecs/cluster/app`,
