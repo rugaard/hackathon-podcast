@@ -3,8 +3,8 @@
   <div class="w-full lg:max-w-3xl lg:mx-auto h-full py-25 lg:shadow-md bg-white/90 lg:left-1/2 lg:-translate-x-1/2 flex flex-col justify-between gap-30 fixed z-100 backdrop-filter backdrop-blur-md transition-all duration-300" :class="{ 'top-full': !isVisible || !isFullPlayerVisisble, 'top-0':  isVisible && isFullPlayerVisisble }">
     <div class="flex-none">
       <div class="relative">
-        <button type="button" class="absolute top-1 right-25" @click="toggleFullPlayer">
-          <FontAwesomeIcon :icon="['far', 'xmark']" class="text-23" />
+        <button type="button" class="absolute right-25" @click="toggleFullPlayer">
+          <FontAwesomeIcon :icon="['far', 'chevron-down']" class="text-23" />
         </button>
         <h3 class="text-16 px-50 font-semibold text-center">Afspiller</h3>
       </div>
@@ -16,7 +16,7 @@
         </div>
       </div>
       <div class="mt-5 px-45 flex flex-col">
-        <h4 class="text-16 font-semibold line-clamp-1">{{ player.episode.value?.title }}</h4>
+        <h4 class="text-16 font-semibold truncate">{{ player.episode.value?.title }}</h4>
         <h5 class="text-14 pt-5">{{ player.episode.value?.show.title }}</h5>
         <div class="my-30 flex items-center justify-between gap-10">
           <span class="w-[40px] text-13 flex-none text-right">{{ player.timePlayedAsReadable.value }}</span>
@@ -62,8 +62,8 @@
   <div class="w-full lg:max-w-3xl lg:mx-auto h-full pt-25 pb-[66px] lg:shadow-md bg-white/90 lg:left-1/2 lg:-translate-x-1/2 flex flex-col fixed z-80 backdrop-filter backdrop-blur-md transition-all duration-300 cursor-pointer" :class="{ 'top-full': !isVisible || !isShowEpisodesVisible, 'top-0':  isVisible && isShowEpisodesVisible }">
     <div class="flex-none">
       <div class="relative">
-        <button type="button" class="absolute top-2 right-25" @click="toggleShowEpisodes">
-          <FontAwesomeIcon :icon="['far', 'xmark']" class="text-23" />
+        <button type="button" class="absolute top-px right-25" @click="toggleShowEpisodes">
+          <FontAwesomeIcon :icon="['far', 'chevron-down']" class="text-23" />
         </button>
         <h3 class="text-16 px-30 font-semibold text-center">Episoder</h3>
         <div class="flex py-20 lg:py-30 px-20 lg:px-50">
@@ -100,7 +100,7 @@
   <div class="w-full pt-10 pb-13 px-10 border-t border-gray-100 bg-white shadow-md shadow-gray-800 fixed inset-x z-90 transition-all" :class="{ '-bottom-full': !isVisible, 'bottom-0': isVisible }">
     <div class="max-w-3xl mx-auto" @click="toggleFullPlayer">
       <template v-if="!isLoading">
-        <div class="flex h-40 items-center justify-between">
+        <div class="max-w-full h-40 flex items-center justify-between">
           <div class="flex items-center">
             <img :src="player.episode.value?.image.url ?? 'https://dummyimage.com/40x40'" class="h-40 flex-none rounded-lg" :class="{ 'grayscale': !player.isPlaying.value }" alt="" />
             <div class="flex flex-col justify-center px-8">
